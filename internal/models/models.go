@@ -9,7 +9,8 @@ type Team struct {
 }
 
 type User struct {
-	UserId   string
+	UserId   int
+	SystemId string
 	UserName string
 	TeamId   int
 	IsActive bool
@@ -18,7 +19,7 @@ type User struct {
 type PullRequest struct {
 	PullRequestId     string
 	PullRequestName   string
-	AuthorId          string
+	AuthorId          int
 	Status            string
 	AssigneeReviewers []*User
 	CreatedAt         time.Time

@@ -31,7 +31,7 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.usecase.AddTeam(&InputData)
+	err = h.usecase.AddTeam(r.Context(), &InputData)
 	if errors.Is(err, appErrors.ErrTeamExists) {
 		logs.PrintLog(r.Context(), "[delivery] AddTeam", err.Error())
 		response.SendErrorResponse(appErrors.HttpErrTeamExists, w)
