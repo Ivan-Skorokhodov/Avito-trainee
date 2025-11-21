@@ -1,0 +1,29 @@
+package apperrors
+
+import "errors"
+
+type HttpError struct {
+	Code    string
+	Message string
+}
+
+var (
+	HttpErrTeamExists = HttpError{
+		Code:    "TEAM_EXISTS",
+		Message: "team_name already exists",
+	}
+	HttpServerError = HttpError{
+		Code:    "SERVER_ERROR",
+		Message: "server error",
+	}
+	HttpErrParseData = HttpError{
+		Code:    "PARSE_DATA",
+		Message: "can't parse data from json",
+	}
+)
+
+var (
+	ErrTeamExists = errors.New("team_name already exists")
+	//ServerError   = errors.New("server error")
+	ErrParseData = errors.New("can't parse data from json")
+)
