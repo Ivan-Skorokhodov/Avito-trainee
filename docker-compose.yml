@@ -1,0 +1,45 @@
+services:
+  app:
+    build: .
+    container_name: avito_app
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: avito
+      DB_HOST: postgres
+      DB_PORT: 5432
+      APP_PORT: 8080
+    ports:
+      - "8080:8080"
+    networks:
+      - avito-net
+
+  postgres:
+    image: postgres:15
+    container_name: avito_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: avito
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - avito-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+networks:
+  avito-net:
+    driver: bridge
+
+volumes:
+  pgdata:
