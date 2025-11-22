@@ -6,6 +6,7 @@ import (
 	appErrors "PRmanager/pkg/app_errors"
 	"PRmanager/pkg/logs"
 	"context"
+	"fmt"
 )
 
 type UsecaseInterface interface {
@@ -51,5 +52,6 @@ func (u *UseCase) AddTeam(ctx context.Context, dto *models.TeamDTO) error {
 		return appErrors.ServerError
 	}
 
+	logs.PrintLog(ctx, "[usecase] AddTeam", fmt.Sprintf("Team added: %+v", team.TeamName))
 	return nil
 }

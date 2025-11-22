@@ -7,6 +7,7 @@ import (
 	"PRmanager/pkg/logs"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	appErrors "PRmanager/pkg/app_errors"
@@ -44,7 +45,8 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.SendOkResonseCreated(w)
+	response.SendOkResonseTeamCreated(&InputData, w)
+	logs.PrintLog(r.Context(), "[delivery] AddTeam", fmt.Sprintf("Team added: %+v", InputData.TeamName))
 }
 
 func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
