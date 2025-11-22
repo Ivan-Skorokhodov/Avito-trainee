@@ -20,10 +20,15 @@ var (
 		Code:    "PARSE_DATA",
 		Message: "can't parse data from json",
 	}
+	HttpErrNotFound = HttpError{
+		Code:    "NOT_FOUND",
+		Message: "resource team not found",
+	}
 )
 
 var (
-	ErrTeamExists  = errors.New("team_name already exists")
-	ErrServerError = errors.New("server error")
-	ErrParseData   = errors.New("can't parse data from json")
+	ErrTeamExists       = errors.New("team_name already exists")
+	ErrServerError      = errors.New("server error")
+	ErrParseData        = errors.New("can't parse data from json")
+	ErrResourceNotFound = errors.New("resource not found")
 )

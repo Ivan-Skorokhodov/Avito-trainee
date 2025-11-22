@@ -50,5 +50,26 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
-	//TODO: реализовать
+	teamName := r.URL.Query().Get("team_name")
+	if teamName == "" {
+		logs.PrintLog(r.Context(), "[delivery] GetTeam", appErrors.ErrResourceNotFound.Error())
+		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
+		return
+	}
+
+	team, err := h.usecase.GetTeamByName(r.Context(), teamName)
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] GetTeam", err.Error())
+		response.SendErrorResponse(appErrors.HttpServerError, w)
+		return
+	}
+
+	if team == nil {
+		logs.PrintLog(r.Context(), "[delivery] GetTeam", appErrors.ErrResourceNotFound.Error())
+		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
+		return
+	}
+
+	response.SendOkResonseTeam(team, w)
+	logs.PrintLog(r.Context(), "[delivery] GetTeam", fmt.Sprintf("Team found: %+v", team.TeamName))
 }

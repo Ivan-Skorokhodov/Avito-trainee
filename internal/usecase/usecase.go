@@ -11,6 +11,7 @@ import (
 
 type UsecaseInterface interface {
 	AddTeam(ctx context.Context, dto *models.TeamDTO) error
+	GetTeamByName(ctx context.Context, teamName string) (*models.TeamDTO, error)
 }
 
 type UseCase struct {
