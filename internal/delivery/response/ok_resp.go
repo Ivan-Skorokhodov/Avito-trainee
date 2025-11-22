@@ -7,7 +7,7 @@ import (
 )
 
 type TeamCreatedResponse struct {
-	Team models.TeamDTO `json:"error"`
+	Team models.TeamDTO `json:"team"`
 }
 
 func SendOkResonseTeamCreated(team *models.TeamDTO, w http.ResponseWriter) {

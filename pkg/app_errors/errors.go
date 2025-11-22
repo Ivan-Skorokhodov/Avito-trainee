@@ -23,7 +23,7 @@ var (
 )
 
 var (
-	ErrTeamExists = errors.New("team_name already exists")
-	ServerError   = errors.New("server error")
-	ErrParseData  = errors.New("can't parse data from json")
+	ErrTeamExists  = errors.New("team_name already exists")
+	ErrServerError = errors.New("server error")
+	ErrParseData   = errors.New("can't parse data from json")
 )

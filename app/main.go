@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	repo := repository.NewRepository()
+	repo := repository.NewDatabase()
 	usecase := usecase.NewUseCase(repo)
 	handler := delivery.NewHandler(usecase)
 

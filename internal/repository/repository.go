@@ -2,6 +2,7 @@ package repository
 
 import (
 	"PRmanager/internal/models"
+	"PRmanager/pkg/logs"
 	"context"
 	"database/sql"
 	"fmt"
@@ -16,7 +17,11 @@ type RepositoryInterface interface {
 	CreateTeam(ctx context.Context, team *models.Team) error
 }
 
-func NewRepository() RepositoryInterface {
+type Database struct {
+	conn *sql.DB
+}
+
+func NewDatabase() *Database {
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
@@ -26,39 +31,80 @@ func NewRepository() RepositoryInterface {
 		os.Getenv("DB_NAME"),
 	)
 
-	db, err := sql.Open("postgres", dsn)
+	conn, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatalf("cannot connect to db: %v", err)
 	}
 
-	err = db.Ping()
+	return &Database{conn: conn}
+}
+
+func (db *Database) TeamExists(ctx context.Context, teamName string) (bool, error) {
+	const query = `
+        SELECT EXISTS(
+            SELECT 1 FROM teams WHERE team_name = $1
+        );
+    `
+
+	var exists bool
+	err := db.conn.QueryRowContext(ctx, query, teamName).Scan(&exists)
 	if err != nil {
-		log.Fatalf("cannot connect to db: %v", err)
+		logs.PrintLog(ctx, "[repository] TeamExists", err.Error())
+		return false, err
 	}
 
-	rows, err := db.Query(`
-	SELECT table_name 
-	FROM information_schema.tables 
-	WHERE table_schema = 'public' 
-	ORDER BY table_name;
-`)
+	return exists, nil
+}
+
+func (db *Database) CreateTeam(ctx context.Context, team *models.Team) error {
+	tx, err := db.conn.BeginTx(ctx, nil)
 	if err != nil {
-		log.Fatalf("failed to query tables: %v", err)
+		logs.PrintLog(ctx, "[repository] CreateTeam", err.Error())
+		return err
 	}
-	defer rows.Close()
 
-	log.Println("Tables in 'public' schema:")
+	const insertTeam = `
+        INSERT INTO teams (team_name)
+        VALUES ($1)
+        RETURNING team_id;
+    `
+	if err := tx.QueryRowContext(ctx, insertTeam, team.TeamName).Scan(&team.TeamId); err != nil {
+		tx.Rollback()
+		logs.PrintLog(ctx, "[repository] CreateTeam", err.Error())
+		return err
+	}
 
-	for rows.Next() {
-		var table string
-		if err := rows.Scan(&table); err != nil {
-			log.Fatalf("failed to scan table name: %v", err)
+	const insertUser = `
+        INSERT INTO users (system_id, user_name, team_id, is_active)
+        VALUES ($1, $2, $3, $4)
+        RETURNING user_id;
+    `
+
+	for _, member := range team.TeamMembers {
+		var newUserID int
+		err := tx.QueryRowContext(
+			ctx,
+			insertUser,
+			member.SystemId,
+			member.UserName,
+			team.TeamId,
+			member.IsActive,
+		).Scan(&newUserID)
+
+		if err != nil {
+			tx.Rollback()
+			logs.PrintLog(ctx, "[repository] CreateTeam", err.Error())
+			return err
 		}
-		log.Printf(" - %s\n", table)
+
+		member.UserId = newUserID
+		member.TeamId = team.TeamId
 	}
 
-	if err := rows.Err(); err != nil {
-		log.Fatalf("rows error: %v", err)
+	if err = tx.Commit(); err != nil {
+		logs.PrintLog(ctx, "[repository] CreateTeam", err.Error())
+		return err
 	}
+
 	return nil
 }

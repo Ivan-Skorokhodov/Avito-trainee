@@ -25,7 +25,7 @@ func (u *UseCase) AddTeam(ctx context.Context, dto *models.TeamDTO) error {
 	exists, err := u.repo.TeamExists(ctx, dto.TeamName)
 	if err != nil {
 		logs.PrintLog(ctx, "[usecase] AddTeam", err.Error())
-		return appErrors.ServerError
+		return appErrors.ErrServerError
 	}
 	if exists {
 		logs.PrintLog(ctx, "[usecase] AddTeam", appErrors.ErrTeamExists.Error())
@@ -49,7 +49,7 @@ func (u *UseCase) AddTeam(ctx context.Context, dto *models.TeamDTO) error {
 
 	if err := u.repo.CreateTeam(ctx, team); err != nil {
 		logs.PrintLog(ctx, "[usecase] AddTeam", err.Error())
-		return appErrors.ServerError
+		return appErrors.ErrServerError
 	}
 
 	logs.PrintLog(ctx, "[usecase] AddTeam", fmt.Sprintf("Team added: %+v", team.TeamName))
