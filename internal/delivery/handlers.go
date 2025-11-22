@@ -58,15 +58,15 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	team, err := h.usecase.GetTeamByName(r.Context(), teamName)
-	if err != nil {
+	if errors.Is(err, appErrors.ErrResourceNotFound) {
 		logs.PrintLog(r.Context(), "[delivery] GetTeam", err.Error())
-		response.SendErrorResponse(appErrors.HttpServerError, w)
+		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
 		return
 	}
 
-	if team == nil {
-		logs.PrintLog(r.Context(), "[delivery] GetTeam", appErrors.ErrResourceNotFound.Error())
-		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] GetTeam", err.Error())
+		response.SendErrorResponse(appErrors.HttpServerError, w)
 		return
 	}
 

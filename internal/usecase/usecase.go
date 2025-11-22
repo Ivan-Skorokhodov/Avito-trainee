@@ -56,3 +56,34 @@ func (u *UseCase) AddTeam(ctx context.Context, dto *models.TeamDTO) error {
 	logs.PrintLog(ctx, "[usecase] AddTeam", fmt.Sprintf("Team added: %+v", team.TeamName))
 	return nil
 }
+
+func (u *UseCase) GetTeamByName(ctx context.Context, teamName string) (*models.TeamDTO, error) {
+	team, err := u.repo.GetTeamByName(ctx, teamName)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] GetTeamByName", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	if team == nil {
+		logs.PrintLog(ctx, "[usecase] GetTeamByName", appErrors.ErrResourceNotFound.Error())
+		return nil, appErrors.ErrResourceNotFound
+	}
+
+	logs.PrintLog(ctx, "[usecase] GetTeamByName", fmt.Sprintf("Team found: %+v", team.TeamName))
+
+	teamDto := &models.TeamDTO{
+		TeamName: team.TeamName,
+		Members:  make([]models.MemberDTO, 0, len(team.TeamMembers)),
+	}
+
+	for _, m := range team.TeamMembers {
+		memberDTO := models.MemberDTO{
+			UserID:   m.SystemId,
+			Username: m.UserName,
+			IsActive: m.IsActive,
+		}
+
+		teamDto.Members = append(teamDto.Members, memberDTO)
+	}
+	return teamDto, nil
+}
