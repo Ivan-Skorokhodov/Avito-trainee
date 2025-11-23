@@ -34,6 +34,12 @@ func SendOkResonseUser(userDto *models.UserDTO, w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func SendOkResonseReview(review *models.ReviewDTO, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(review)
+}
+
 func SendOKResponse(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusOK)
 }

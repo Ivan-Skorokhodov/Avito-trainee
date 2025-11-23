@@ -13,6 +13,7 @@ type UsecaseInterface interface {
 	AddTeam(ctx context.Context, dto *models.TeamDTO) error
 	GetTeamByName(ctx context.Context, teamName string) (*models.TeamDTO, error)
 	SetIsActive(ctx context.Context, dto *models.SetIsActiveDTO) (*models.UserDTO, error)
+	GetReview(ctx context.Context, userSystemId string) (*models.ReviewDTO, error)
 }
 
 type UseCase struct {

@@ -52,8 +52,8 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 	teamName := r.URL.Query().Get("team_name")
 	if teamName == "" {
-		logs.PrintLog(r.Context(), "[delivery] GetTeam", appErrors.ErrResourceNotFound.Error())
-		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
+		logs.PrintLog(r.Context(), "[delivery] GetTeam", appErrors.ErrParseData.Error())
+		response.SendErrorResponse(appErrors.HttpErrParseData, w)
 		return
 	}
 
@@ -98,4 +98,29 @@ func (h *Handler) SetIsActive(w http.ResponseWriter, r *http.Request) {
 
 	response.SendOkResonseUser(userDto, w)
 	logs.PrintLog(r.Context(), "[delivery] SetIsActive", fmt.Sprintf("Member updated: %+v set isActive to: %+v", InputData.UserID, InputData.IsActive))
+}
+
+func (h *Handler) GetReview(w http.ResponseWriter, r *http.Request) {
+	userSystemId := r.URL.Query().Get("user_id")
+	if userSystemId == "" {
+		logs.PrintLog(r.Context(), "[delivery] GetReview", appErrors.ErrParseData.Error())
+		response.SendErrorResponse(appErrors.HttpErrParseData, w)
+		return
+	}
+
+	review, err := h.usecase.GetReview(r.Context(), userSystemId)
+	if errors.Is(err, appErrors.ErrResourceNotFound) {
+		logs.PrintLog(r.Context(), "[delivery] GetReview", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
+		return
+	}
+
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] GetReview", err.Error())
+		response.SendErrorResponse(appErrors.HttpServerError, w)
+		return
+	}
+
+	response.SendOkResonseReview(review, w)
+	logs.PrintLog(r.Context(), "[delivery] GetReview", fmt.Sprintf("Review found for user: %+v", userSystemId))
 }

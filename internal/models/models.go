@@ -22,6 +22,7 @@ type PullRequest struct {
 	SystemIdId        string
 	PullRequestName   string
 	AuthorId          int
+	AuthotSystemId    string
 	Status            string
 	AssigneeReviewers []*User
 	CreatedAt         time.Time

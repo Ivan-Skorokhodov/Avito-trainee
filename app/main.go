@@ -21,7 +21,9 @@ func main() {
 
 	r.Post("/team/add", handler.AddTeam)
 	r.Get("/team/get", handler.GetTeam)
+
 	r.Post("/users/setIsActive", handler.SetIsActive)
+	r.Get("/users/getReview", handler.GetReview)
 
 	log.Println("Servise started on :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
