@@ -2,9 +2,11 @@ package repository
 
 import (
 	"PRmanager/internal/models"
+	appErrors "PRmanager/pkg/app_errors"
 	"PRmanager/pkg/logs"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -97,9 +99,6 @@ func (db *Database) CreateTeam(ctx context.Context, team *models.Team) error {
 			logs.PrintLog(ctx, "[repository] CreateTeam", err.Error())
 			return err
 		}
-
-		member.UserId = newUserID
-		member.TeamId = team.TeamId
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -108,4 +107,62 @@ func (db *Database) CreateTeam(ctx context.Context, team *models.Team) error {
 	}
 
 	return nil
+}
+
+func (db *Database) GetTeamByName(ctx context.Context, teamName string) (*models.Team, error) {
+	const selectTeam = `
+        SELECT team_id, team_name
+        FROM teams
+        WHERE team_name = $1;
+    `
+
+	var team models.Team
+
+	err := db.conn.QueryRowContext(ctx, selectTeam, teamName).
+		Scan(&team.TeamId, &team.TeamName)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		logs.PrintLog(ctx, "[repository] GetTeamByName", appErrors.ErrResourceNotFound.Error())
+		return nil, nil
+	}
+
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] GetTeamByName", err.Error())
+		return nil, err
+	}
+
+	const selectMembers = `
+        SELECT user_id, system_id, user_name, team_id, is_active
+        FROM users
+        WHERE team_id = $1;
+    `
+
+	rows, err := db.conn.QueryContext(ctx, selectMembers, team.TeamId)
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] GetTeamByName", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	team.TeamMembers = make([]*models.User, 0)
+	for rows.Next() {
+		member := &models.User{}
+
+		err := rows.Scan(
+			&member.UserId,
+			&member.SystemId,
+			&member.UserName,
+			&member.TeamId,
+			&member.IsActive,
+		)
+
+		if err != nil {
+			logs.PrintLog(ctx, "[repository] GetTeamByName", err.Error())
+			return nil, err
+		}
+
+		team.TeamMembers = append(team.TeamMembers, member)
+	}
+
+	return &team, nil
 }

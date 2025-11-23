@@ -13,6 +13,6 @@ type ErrorResponse struct {
 func SendErrorResponse(httpError err.HttpError, w http.ResponseWriter) {
 	response := ErrorResponse{Error: httpError}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
+	w.WriteHeader(httpError.Status)
 	json.NewEncoder(w).Encode(response)
 }

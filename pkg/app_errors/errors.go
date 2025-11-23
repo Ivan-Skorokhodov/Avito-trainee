@@ -1,28 +1,36 @@
 package apperrors
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+)
 
 type HttpError struct {
-	Code    string
-	Message string
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Status  int    `json:"-"`
 }
 
 var (
 	HttpErrTeamExists = HttpError{
 		Code:    "TEAM_EXISTS",
 		Message: "team_name already exists",
+		Status:  http.StatusBadRequest,
 	}
 	HttpServerError = HttpError{
 		Code:    "SERVER_ERROR",
 		Message: "server error",
+		Status:  http.StatusInternalServerError,
 	}
 	HttpErrParseData = HttpError{
 		Code:    "PARSE_DATA",
 		Message: "can't parse data from json",
+		Status:  http.StatusBadRequest,
 	}
 	HttpErrNotFound = HttpError{
 		Code:    "NOT_FOUND",
 		Message: "resource team not found",
+		Status:  http.StatusNotFound,
 	}
 )
 
