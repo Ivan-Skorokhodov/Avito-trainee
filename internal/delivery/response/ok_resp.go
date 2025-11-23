@@ -15,7 +15,7 @@ type UserResponse struct {
 }
 
 type CreatedPullRequestResponse struct {
-	PullRequest models.PullRequestDTO `json:"pr"`
+	PullRequest models.OutputCreatePullRequestDTO `json:"pr"`
 }
 
 func SendOkResonseTeamCreated(team *models.TeamDTO, w http.ResponseWriter) {
@@ -44,7 +44,7 @@ func SendOkResonseReview(review *models.ReviewDTO, w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(review)
 }
 
-func SendOkResonsePullRequest(pr *models.PullRequestDTO, w http.ResponseWriter) {
+func SendOkResonsePullRequest(pr *models.OutputCreatePullRequestDTO, w http.ResponseWriter) {
 	response := CreatedPullRequestResponse{PullRequest: *pr}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

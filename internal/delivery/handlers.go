@@ -126,7 +126,7 @@ func (h *Handler) GetReview(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
-	var InputData models.CreatePullRequestDTO
+	var InputData models.InputCreatePullRequestDTO
 	err := json.NewDecoder(r.Body).Decode(&InputData)
 	if err != nil {
 		logs.PrintLog(r.Context(), "[delivery] CreatePullRequest", err.Error())
@@ -155,5 +155,4 @@ func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 
 	response.SendOkResonsePullRequest(pr, w)
 	logs.PrintLog(r.Context(), "[delivery] CreatePullRequest", fmt.Sprintf("PullRequest created: %+v", InputData.PullRequestName))
-
 }

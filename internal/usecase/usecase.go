@@ -15,7 +15,7 @@ type UsecaseInterface interface {
 	GetTeamByName(ctx context.Context, teamName string) (*models.TeamDTO, error)
 	SetIsActive(ctx context.Context, dto *models.SetIsActiveDTO) (*models.UserDTO, error)
 	GetReview(ctx context.Context, userSystemId string) (*models.ReviewDTO, error)
-	CreatePullRequest(ctx context.Context, dto *models.CreatePullRequestDTO) (*models.PullRequestDTO, error)
+	CreatePullRequest(ctx context.Context, dto *models.InputCreatePullRequestDTO) (*models.OutputCreatePullRequestDTO, error)
 }
 
 type UseCase struct {
@@ -151,7 +151,7 @@ func (u *UseCase) GetReview(ctx context.Context, userSystemId string) (*models.R
 	return reviewDto, nil
 }
 
-func (u *UseCase) CreatePullRequest(ctx context.Context, dto *models.CreatePullRequestDTO) (*models.PullRequestDTO, error) {
+func (u *UseCase) CreatePullRequest(ctx context.Context, dto *models.InputCreatePullRequestDTO) (*models.OutputCreatePullRequestDTO, error) {
 	exists, err := u.repo.PullRequestExists(ctx, dto.PullRequestId)
 	if err != nil {
 		logs.PrintLog(ctx, "[usecase] CreatePullRequest", err.Error())
@@ -220,7 +220,7 @@ func (u *UseCase) CreatePullRequest(ctx context.Context, dto *models.CreatePullR
 		return nil, appErrors.ErrServerError
 	}
 
-	prDto := &models.PullRequestDTO{
+	prDto := &models.OutputCreatePullRequestDTO{
 		PullRequestID:     pr.SystemId,
 		PullRequestName:   pr.PullRequestName,
 		AuthorID:          pr.AuthorSystemId,
