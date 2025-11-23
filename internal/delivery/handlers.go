@@ -96,6 +96,6 @@ func (h *Handler) SetIsActive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.SendOkResonseUser(&userDto, w)
+	response.SendOkResonseUser(userDto, w)
 	logs.PrintLog(r.Context(), "[delivery] SetIsActive", fmt.Sprintf("Member updated: %+v set isActive to: %+v", InputData.UserID, InputData.IsActive))
 }

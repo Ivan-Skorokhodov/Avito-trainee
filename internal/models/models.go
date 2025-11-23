@@ -13,11 +13,13 @@ type User struct {
 	SystemId string
 	UserName string
 	TeamId   int
+	TeamName string
 	IsActive bool
 }
 
 type PullRequest struct {
-	PullRequestId     string
+	PullRequestId     int
+	SystemIdId        string
 	PullRequestName   string
 	AuthorId          int
 	Status            string

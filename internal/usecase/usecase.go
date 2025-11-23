@@ -12,6 +12,7 @@ import (
 type UsecaseInterface interface {
 	AddTeam(ctx context.Context, dto *models.TeamDTO) error
 	GetTeamByName(ctx context.Context, teamName string) (*models.TeamDTO, error)
+	SetIsActive(ctx context.Context, dto *models.SetIsActiveDTO) (*models.UserDTO, error)
 }
 
 type UseCase struct {
@@ -86,4 +87,27 @@ func (u *UseCase) GetTeamByName(ctx context.Context, teamName string) (*models.T
 		teamDto.Members = append(teamDto.Members, memberDTO)
 	}
 	return teamDto, nil
+}
+
+func (u *UseCase) SetIsActive(ctx context.Context, dto *models.SetIsActiveDTO) (*models.UserDTO, error) {
+	user, err := u.repo.SetIsActive(ctx, dto.UserID, dto.IsActive)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] SetIsActive", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	if user == nil {
+		logs.PrintLog(ctx, "[usecase] SetIsActive", appErrors.ErrResourceNotFound.Error())
+		return nil, appErrors.ErrResourceNotFound
+	}
+
+	userDto := &models.UserDTO{
+		UserId:   user.SystemId,
+		UserName: user.UserName,
+		TeamName: user.TeamName,
+		IsActive: user.IsActive,
+	}
+
+	logs.PrintLog(ctx, "[usecase] SetIsActive", fmt.Sprintf("Member updated: %+v set isActive to: %+v", dto.UserID, dto.IsActive))
+	return userDto, nil
 }
