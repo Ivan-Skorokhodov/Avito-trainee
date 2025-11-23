@@ -15,7 +15,6 @@ type User struct {
 	TeamId   int
 	TeamName string
 	IsActive bool
-	Reviews  []*PullRequest
 }
 
 type PullRequest struct {

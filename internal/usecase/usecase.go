@@ -114,7 +114,7 @@ func (u *UseCase) SetIsActive(ctx context.Context, dto *models.SetIsActiveDTO) (
 }
 
 func (u *UseCase) GetReview(ctx context.Context, userSystemId string) (*models.ReviewDTO, error) {
-	user, err := u.repo.GetUserWithPRsBySystemId(ctx, userSystemId)
+	user, err := u.repo.GetUserBySystemId(ctx, userSystemId)
 	if err != nil {
 		logs.PrintLog(ctx, "[usecase] GetReview", err.Error())
 		return nil, appErrors.ErrServerError
@@ -125,12 +125,18 @@ func (u *UseCase) GetReview(ctx context.Context, userSystemId string) (*models.R
 		return nil, appErrors.ErrResourceNotFound
 	}
 
-	reviewDto := &models.ReviewDTO{
-		UserId:      user.SystemId,
-		PullRequest: make([]models.PullRequestDTO, 0, len(user.Reviews)),
+	reviews, err := u.repo.GetListReviewsByUserId(ctx, user.UserId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] GetReview", err.Error())
+		return nil, appErrors.ErrServerError
 	}
 
-	for _, pr := range user.Reviews {
+	reviewDto := &models.ReviewDTO{
+		UserId:      user.SystemId,
+		PullRequest: make([]models.PullRequestDTO, 0, len(reviews)),
+	}
+
+	for _, pr := range reviews {
 		reviewDto.PullRequest = append(reviewDto.PullRequest, models.PullRequestDTO{
 			PullRequestId:   pr.SystemId,
 			PullRequestName: pr.PullRequestName,

@@ -19,7 +19,8 @@ type RepositoryInterface interface {
 	CreateTeam(ctx context.Context, team *models.Team) error
 	GetTeamByName(ctx context.Context, teamName string) (*models.Team, error)
 	SetIsActive(ctx context.Context, userID string, isActive bool) (*models.User, error)
-	GetUserWithPRsBySystemId(ctx context.Context, systemId string) (*models.User, error)
+	GetUserBySystemId(ctx context.Context, systemId string) (*models.User, error)
+	GetListReviewsByUserId(ctx context.Context, userId int) ([]*models.PullRequest, error)
 }
 
 type Database struct {
@@ -212,7 +213,7 @@ func (db *Database) SetIsActive(ctx context.Context, userID string, isActive boo
 	return &user, nil
 }
 
-func (db *Database) GetUserWithPRsBySystemId(ctx context.Context, systemId string) (*models.User, error) {
+func (db *Database) GetUserBySystemId(ctx context.Context, systemId string) (*models.User, error) {
 	const userQuery = `
         SELECT 
             user_id
@@ -221,6 +222,7 @@ func (db *Database) GetUserWithPRsBySystemId(ctx context.Context, systemId strin
     `
 
 	var user models.User
+	user.SystemId = systemId
 	err := db.conn.QueryRowContext(ctx, userQuery, systemId).Scan(&user.UserId)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -232,7 +234,10 @@ func (db *Database) GetUserWithPRsBySystemId(ctx context.Context, systemId strin
 		logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
 		return nil, err
 	}
+	return &user, nil
+}
 
+func (db *Database) GetListReviewsByUserId(ctx context.Context, userId int) ([]*models.PullRequest, error) {
 	const prQuery = `
         SELECT
             pr.system_id,
@@ -245,14 +250,14 @@ func (db *Database) GetUserWithPRsBySystemId(ctx context.Context, systemId strin
         WHERE r.user_id = $1;
     `
 
-	rows, err := db.conn.QueryContext(ctx, prQuery, user.UserId)
+	rows, err := db.conn.QueryContext(ctx, prQuery, userId)
 	if err != nil {
 		logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
 		return nil, err
 	}
 	defer rows.Close()
 
-	user.Reviews = make([]*models.PullRequest, 0)
+	reviews := make([]*models.PullRequest, 0)
 	for rows.Next() {
 		pr := &models.PullRequest{}
 
@@ -267,9 +272,7 @@ func (db *Database) GetUserWithPRsBySystemId(ctx context.Context, systemId strin
 			return nil, err
 		}
 
-		user.Reviews = append(user.Reviews, pr)
+		reviews = append(reviews, pr)
 	}
-	user.SystemId = systemId
-
-	return &user, nil
+	return reviews, nil
 }
