@@ -32,11 +32,17 @@ var (
 		Message: "resource team not found",
 		Status:  http.StatusNotFound,
 	}
+	HttpErrPullRequestExists = HttpError{
+		Code:    "PR_EXISTS",
+		Message: "PR id already exists",
+		Status:  http.StatusConflict,
+	}
 )
 
 var (
-	ErrTeamExists       = errors.New("team_name already exists")
-	ErrServerError      = errors.New("server error")
-	ErrParseData        = errors.New("can't parse data from json")
-	ErrResourceNotFound = errors.New("resource not found")
+	ErrTeamExists        = errors.New("team_name already exists")
+	ErrServerError       = errors.New("server error")
+	ErrParseData         = errors.New("can't parse data from json")
+	ErrResourceNotFound  = errors.New("resource not found")
+	ErrPullRequestExists = errors.New("pr id already exists")
 )

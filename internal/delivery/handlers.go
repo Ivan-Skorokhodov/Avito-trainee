@@ -141,6 +141,12 @@ func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if errors.Is(err, appErrors.ErrPullRequestExists) {
+		logs.PrintLog(r.Context(), "[delivery] CreatePullRequest", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrPullRequestExists, w)
+		return
+	}
+
 	if err != nil {
 		logs.PrintLog(r.Context(), "[delivery] CreatePullRequest", err.Error())
 		response.SendErrorResponse(appErrors.HttpServerError, w)
