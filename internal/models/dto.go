@@ -49,7 +49,7 @@ type OutputCreatePullRequestDTO struct {
 	AssignedReviewers []string `json:"assigned_reviewers"`
 }
 
-type MergePullRequestDTO struct {
+type InputMergePullRequestDTO struct {
 	PullRequestId string `json:"pull_request_id"`
 }
 

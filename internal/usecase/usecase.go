@@ -16,6 +16,7 @@ type UsecaseInterface interface {
 	SetIsActive(ctx context.Context, dto *models.SetIsActiveDTO) (*models.UserDTO, error)
 	GetReview(ctx context.Context, userSystemId string) (*models.ReviewDTO, error)
 	CreatePullRequest(ctx context.Context, dto *models.InputCreatePullRequestDTO) (*models.OutputCreatePullRequestDTO, error)
+	MergePullRequest(ctx context.Context, dto *models.InputMergePullRequestDTO) (*models.OutputMergePullRequestDTO, error)
 }
 
 type UseCase struct {

@@ -153,6 +153,32 @@ func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.SendOkResonsePullRequest(pr, w)
+	response.SendOkResonseCreatePullRequest(pr, w)
 	logs.PrintLog(r.Context(), "[delivery] CreatePullRequest", fmt.Sprintf("PullRequest created: %+v", InputData.PullRequestName))
+}
+
+func (h *Handler) MergePullRequest(w http.ResponseWriter, r *http.Request) {
+	var InputData models.InputMergePullRequestDTO
+	err := json.NewDecoder(r.Body).Decode(&InputData)
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] MergePullRequest", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrParseData, w)
+		return
+	}
+
+	pr, err := h.usecase.MergePullRequest(r.Context(), &InputData)
+	if errors.Is(err, appErrors.ErrResourceNotFound) {
+		logs.PrintLog(r.Context(), "[delivery] MergePullRequest", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
+		return
+	}
+
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] MergePullRequest", err.Error())
+		response.SendErrorResponse(appErrors.HttpServerError, w)
+		return
+	}
+
+	response.SendOkResonseMergePullRequest(pr, w)
+	logs.PrintLog(r.Context(), "[delivery] MergePullRequest", fmt.Sprintf("PullRequest merged: %+v", InputData.PullRequestId))
 }
