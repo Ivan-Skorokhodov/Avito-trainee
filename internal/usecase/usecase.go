@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand/v2"
+	"time"
 )
 
 type UsecaseInterface interface {
@@ -231,6 +232,69 @@ func (u *UseCase) CreatePullRequest(ctx context.Context, dto *models.InputCreate
 
 	for _, reviewer := range reviewers {
 		prDto.AssignedReviewers = append(prDto.AssignedReviewers, reviewer.SystemId)
+	}
+
+	return prDto, nil
+}
+
+func (u *UseCase) MergePullRequest(ctx context.Context, dto *models.InputMergePullRequestDTO) (*models.OutputMergePullRequestDTO, error) {
+	pr, err := u.repo.GetPullRequestById(ctx, dto.PullRequestId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] MergePullRequest", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	if pr == nil {
+		logs.PrintLog(ctx, "[usecase] MergePullRequest", appErrors.ErrResourceNotFound.Error())
+		return nil, appErrors.ErrResourceNotFound
+	}
+
+	if pr.Status == "MERGED" {
+		logs.PrintLog(ctx, "[usecase] MergePullRequest", fmt.Sprintf("Pull request is already merged: %+v", dto.PullRequestId))
+		prDto := &models.OutputMergePullRequestDTO{
+			PullRequestID:     pr.SystemId,
+			PullRequestName:   pr.PullRequestName,
+			AuthorID:          pr.AuthorSystemId,
+			Status:            pr.Status,
+			AssignedReviewers: make([]string, 0, len(pr.AssigneeReviewers)),
+		}
+
+		if !pr.MergedAt.IsZero() {
+			prDto.MergedAt = pr.MergedAt.Format(time.RFC3339)
+		} else {
+			prDto.MergedAt = ""
+		}
+
+		for _, r := range pr.AssigneeReviewers {
+			prDto.AssignedReviewers = append(prDto.AssignedReviewers, r.SystemId)
+		}
+
+		return prDto, nil
+	}
+
+	pr.Status = "MERGED"
+	err = u.repo.SetMergedStatusPullRequest(ctx, pr.PullRequestId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] MergePullRequest", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	prDto := &models.OutputMergePullRequestDTO{
+		PullRequestID:     pr.SystemId,
+		PullRequestName:   pr.PullRequestName,
+		AuthorID:          pr.AuthorSystemId,
+		Status:            pr.Status,
+		AssignedReviewers: make([]string, 0, len(pr.AssigneeReviewers)),
+	}
+
+	if !pr.MergedAt.IsZero() {
+		prDto.MergedAt = pr.MergedAt.Format(time.RFC3339)
+	} else {
+		prDto.MergedAt = ""
+	}
+
+	for _, r := range pr.AssigneeReviewers {
+		prDto.AssignedReviewers = append(prDto.AssignedReviewers, r.SystemId)
 	}
 
 	return prDto, nil

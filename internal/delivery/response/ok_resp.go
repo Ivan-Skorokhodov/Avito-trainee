@@ -58,7 +58,7 @@ func SendOkResonseCreatePullRequest(pr *models.OutputCreatePullRequestDTO, w htt
 func SendOkResonseMergePullRequest(pr *models.OutputMergePullRequestDTO, w http.ResponseWriter) {
 	response := MergedPullRequestResponse{PullRequest: *pr}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
 

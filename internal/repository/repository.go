@@ -24,6 +24,8 @@ type RepositoryInterface interface {
 	PullRequestExists(ctx context.Context, prSystemID string) (bool, error)
 	GetTeamMembers(ctx context.Context, teamId int) ([]*models.User, error)
 	CreatePullRequestAndReview(ctx context.Context, pr *models.PullRequest, reviews []*models.User) error
+	GetPullRequestById(ctx context.Context, prSystemId string) (*models.PullRequest, error)
+	SetMergedStatusPullRequest(ctx context.Context, prId int) error
 }
 
 type Database struct {
@@ -385,6 +387,99 @@ func (db *Database) CreatePullRequestAndReview(ctx context.Context, pr *models.P
 
 	if err := tx.Commit(); err != nil {
 		logs.PrintLog(ctx, "[repository] CreatePullRequestAndReview", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (db *Database) GetPullRequestById(ctx context.Context, prSystemId string) (*models.PullRequest, error) {
+	const prQuery = `
+        SELECT 
+            pr.pull_request_id,
+            pr.system_id,
+            pr.pull_request_name,
+            pr.author_id,
+            au.system_id AS author_system_id,
+            pr.status,
+            pr.created_at,
+            pr.merged_at
+        FROM pull_requests AS pr
+        JOIN users AS au ON au.user_id = pr.author_id
+        WHERE pr.system_id = $1;
+    `
+
+	pr := &models.PullRequest{}
+	err := db.conn.QueryRowContext(ctx, prQuery, prSystemId).Scan(
+		&pr.PullRequestId,
+		&pr.SystemId,
+		&pr.PullRequestName,
+		&pr.AuthorId,
+		&pr.AuthorSystemId,
+		&pr.Status,
+		&pr.CreatedAt,
+		&pr.MergedAt,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] GetPullRequestById", err.Error())
+		return nil, err
+	}
+
+	const reviewersQuery = `
+        SELECT 
+            u.user_id,
+            u.system_id,
+            u.user_name,
+        FROM pull_request_reviewers AS r
+        JOIN users AS u ON u.user_id = r.user_id
+        WHERE r.pull_request_id = $1;
+    `
+
+	rows, err := db.conn.QueryContext(ctx, reviewersQuery, pr.PullRequestId)
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] GetPullRequestById", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	pr.AssigneeReviewers = make([]*models.User, 0)
+
+	for rows.Next() {
+		u := &models.User{}
+		err := rows.Scan(
+			&u.UserId,
+			&u.SystemId,
+			&u.UserName,
+		)
+
+		if err != nil {
+			logs.PrintLog(ctx, "[repository] GetPullRequestById", err.Error())
+			return nil, err
+		}
+
+		pr.AssigneeReviewers = append(pr.AssigneeReviewers, u)
+	}
+
+	return pr, nil
+}
+
+func (db *Database) SetMergedStatusPullRequest(ctx context.Context, prId int) error {
+	const query = `
+        UPDATE pull_requests
+        SET 
+            status = 'MERGED',
+            merged_at = NOW()
+        WHERE pull_request_id = $1;
+    `
+
+	_, err := db.conn.ExecContext(ctx, query, prId)
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] SetMergedStatusPullRequest", err.Error())
 		return err
 	}
 
