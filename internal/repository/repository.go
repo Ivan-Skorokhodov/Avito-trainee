@@ -19,6 +19,7 @@ type RepositoryInterface interface {
 	CreateTeam(ctx context.Context, team *models.Team) error
 	GetTeamByName(ctx context.Context, teamName string) (*models.Team, error)
 	SetIsActive(ctx context.Context, userID string, isActive bool) (*models.User, error)
+	GetUserWithPRsBySystemId(ctx context.Context, systemId string) (*models.User, error)
 }
 
 type Database struct {

@@ -112,3 +112,33 @@ func (u *UseCase) SetIsActive(ctx context.Context, dto *models.SetIsActiveDTO) (
 	logs.PrintLog(ctx, "[usecase] SetIsActive", fmt.Sprintf("Member updated: %+v set isActive to: %+v", dto.UserID, dto.IsActive))
 	return userDto, nil
 }
+
+func (u *UseCase) GetReview(ctx context.Context, userSystemId string) (*models.ReviewDTO, error) {
+	user, err := u.repo.GetUserWithPRsBySystemId(ctx, userSystemId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] GetReview", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	if user == nil {
+		logs.PrintLog(ctx, "[usecase] GetReview", appErrors.ErrResourceNotFound.Error())
+		return nil, appErrors.ErrResourceNotFound
+	}
+
+	reviewDto := &models.ReviewDTO{
+		UserId:      user.SystemId,
+		PullRequest: make([]models.PullRequestDTO, 0, len(user.Reviews)),
+	}
+
+	for _, pr := range user.Reviews {
+		reviewDto.PullRequest = append(reviewDto.PullRequest, models.PullRequestDTO{
+			PullRequestId:   pr.SystemIdId,
+			PullRequestName: pr.PullRequestName,
+			AuthorId:        pr.AuthotSystemId,
+			Status:          pr.Status,
+		})
+	}
+
+	logs.PrintLog(ctx, "[usecase] GetReview", fmt.Sprintf("Member found: %+v", user.SystemId))
+	return reviewDto, nil
+}
