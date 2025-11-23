@@ -73,3 +73,29 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 	response.SendOkResonseTeam(team, w)
 	logs.PrintLog(r.Context(), "[delivery] GetTeam", fmt.Sprintf("Team found: %+v", team.TeamName))
 }
+
+func (h *Handler) SetIsActive(w http.ResponseWriter, r *http.Request) {
+	var InputData models.SetIsActiveDTO
+	err := json.NewDecoder(r.Body).Decode(&InputData)
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] SetIsActive", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrParseData, w)
+		return
+	}
+
+	userDto, err := h.usecase.SetIsActive(r.Context(), &InputData)
+	if errors.Is(err, appErrors.ErrResourceNotFound) {
+		logs.PrintLog(r.Context(), "[delivery] SetIsActive", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
+		return
+	}
+
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] SetIsActive", err.Error())
+		response.SendErrorResponse(appErrors.HttpServerError, w)
+		return
+	}
+
+	response.SendOkResonseUser(&userDto, w)
+	logs.PrintLog(r.Context(), "[delivery] SetIsActive", fmt.Sprintf("Member updated: %+v set isActive to: %+v", InputData.UserID, InputData.IsActive))
+}
