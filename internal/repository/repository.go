@@ -206,8 +206,70 @@ func (db *Database) SetIsActive(ctx context.Context, userID string, isActive boo
 
 	if err != nil {
 		logs.PrintLog(ctx, "[repository] SetIsActive", err.Error())
-		return nil, appErrors.ErrServerError
+		return nil, err
 	}
+
+	return &user, nil
+}
+
+func (db *Database) GetUserWithPRsBySystemId(ctx context.Context, systemId string) (*models.User, error) {
+	const userQuery = `
+        SELECT 
+            user_id
+        FROM users
+        WHERE system_id = $1;
+    `
+
+	var user models.User
+	err := db.conn.QueryRowContext(ctx, userQuery, systemId).Scan(&user.UserId)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
+		return nil, nil
+	}
+
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
+		return nil, err
+	}
+
+	const prQuery = `
+        SELECT
+            pr.system_id,
+            pr.pull_request_name,
+            au.system_id,
+            pr.status
+        FROM pull_request_reviewers AS r
+        JOIN pull_requests AS pr ON pr.pull_request_id = r.pull_request_id
+        JOIN users AS au ON au.user_id = pr.author_id
+        WHERE r.user_id = $1;
+    `
+
+	rows, err := db.conn.QueryContext(ctx, prQuery, user.UserId)
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	user.Reviews = make([]*models.PullRequest, 0)
+	for rows.Next() {
+		pr := &models.PullRequest{}
+
+		err := rows.Scan(
+			&pr.SystemId,
+			&pr.PullRequestName,
+			&pr.AuthorSystemId,
+			&pr.Status,
+		)
+		if err != nil {
+			logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
+			return nil, err
+		}
+
+		user.Reviews = append(user.Reviews, pr)
+	}
+	user.SystemId = systemId
 
 	return &user, nil
 }

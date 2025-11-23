@@ -132,9 +132,9 @@ func (u *UseCase) GetReview(ctx context.Context, userSystemId string) (*models.R
 
 	for _, pr := range user.Reviews {
 		reviewDto.PullRequest = append(reviewDto.PullRequest, models.PullRequestDTO{
-			PullRequestId:   pr.SystemIdId,
+			PullRequestId:   pr.SystemId,
 			PullRequestName: pr.PullRequestName,
-			AuthorId:        pr.AuthotSystemId,
+			AuthorId:        pr.AuthorSystemId,
 			Status:          pr.Status,
 		})
 	}

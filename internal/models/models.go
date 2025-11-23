@@ -20,10 +20,10 @@ type User struct {
 
 type PullRequest struct {
 	PullRequestId     int
-	SystemIdId        string
+	SystemId          string
 	PullRequestName   string
 	AuthorId          int
-	AuthotSystemId    string
+	AuthorSystemId    string
 	Status            string
 	AssigneeReviewers []*User
 	CreatedAt         time.Time
