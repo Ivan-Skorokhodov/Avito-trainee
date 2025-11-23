@@ -123,7 +123,7 @@ func (db *Database) GetTeamByName(ctx context.Context, teamName string) (*models
 		Scan(&team.TeamId, &team.TeamName)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		logs.PrintLog(ctx, "[repository] GetTeamByName", appErrors.ErrResourceNotFound.Error())
+		logs.PrintLog(ctx, "[repository] GetTeamByName", err.Error())
 		return nil, nil
 	}
 
@@ -166,4 +166,47 @@ func (db *Database) GetTeamByName(ctx context.Context, teamName string) (*models
 	}
 
 	return &team, nil
+}
+
+func (db *Database) SetIsActive(ctx context.Context, userID string, isActive bool) (*models.User, error) {
+	const query = `
+        UPDATE users
+        SET is_active = $2
+        WHERE system_id = $1
+        RETURNING 
+            users.user_id,
+            users.system_id,
+            users.user_name,
+            users.team_id,
+            users.is_active;
+    `
+
+	var user models.User
+	err := db.conn.
+		QueryRowContext(ctx, query, userID, isActive).
+		Scan(&user.UserId, &user.SystemId, &user.UserName, &user.TeamId, &user.IsActive)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		logs.PrintLog(ctx, "[repository] SetIsActive", err.Error())
+		return nil, nil
+	}
+
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] SetIsActive", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	const teamQuery = `
+            SELECT team_name 
+            FROM teams 
+            WHERE team_id = $1;
+        `
+	err = db.conn.QueryRowContext(ctx, teamQuery, user.TeamId).Scan(&user.TeamName)
+
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] SetIsActive", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	return &user, nil
 }

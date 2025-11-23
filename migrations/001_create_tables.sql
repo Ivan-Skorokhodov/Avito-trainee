@@ -8,7 +8,7 @@ CREATE TABLE users (
     system_id TEXT NOT NULL UNIQUE,
     user_name TEXT NOT NULL,
     team_id   INT REFERENCES teams(team_id) ON DELETE SET NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+    is_active BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE pull_requests (
