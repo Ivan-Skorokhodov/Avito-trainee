@@ -149,3 +149,18 @@ func (u *UseCase) GetReview(ctx context.Context, userSystemId string) (*models.R
 	logs.PrintLog(ctx, "[usecase] GetReview", fmt.Sprintf("Member found: %+v", user.SystemId))
 	return reviewDto, nil
 }
+
+func (u *UseCase) CreatePullRequest(ctx context.Context, dto *models.CreatePullRequestDTO) (*models.PullRequestDTO, error) {
+	exists, err := u.repo.PullRequestExists(ctx, dto.PullRequestId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] CreatePullRequest", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	if exists {
+		logs.PrintLog(ctx, "[usecase] CreatePullRequest", appErrors.ErrPullRequestExists.Error())
+		return nil, appErrors.ErrPullRequestExists
+	}
+
+	return nil, nil
+}

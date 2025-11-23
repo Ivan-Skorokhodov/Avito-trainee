@@ -21,6 +21,7 @@ type RepositoryInterface interface {
 	SetIsActive(ctx context.Context, userID string, isActive bool) (*models.User, error)
 	GetUserBySystemId(ctx context.Context, systemId string) (*models.User, error)
 	GetListReviewsByUserId(ctx context.Context, userId int) ([]*models.PullRequest, error)
+	PullRequestExists(ctx context.Context, prSystemID string) (bool, error)
 }
 
 type Database struct {
@@ -276,4 +277,23 @@ func (db *Database) GetListReviewsByUserId(ctx context.Context, userId int) ([]*
 		reviews = append(reviews, pr)
 	}
 	return reviews, nil
+}
+
+func (db *Database) PullRequestExists(ctx context.Context, prSystemID string) (bool, error) {
+	const query = `
+        SELECT EXISTS (
+            SELECT 1 
+            FROM pull_requests
+            WHERE system_id = $1
+        );
+    `
+
+	var exists bool
+	err := db.conn.QueryRowContext(ctx, query, prSystemID).Scan(&exists)
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] PullRequestExists", err.Error())
+		return false, err
+	}
+
+	return exists, nil
 }
