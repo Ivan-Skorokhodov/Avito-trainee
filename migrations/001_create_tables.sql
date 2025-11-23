@@ -7,8 +7,12 @@ CREATE TABLE users (
     user_id   SERIAL PRIMARY KEY,
     system_id TEXT NOT NULL UNIQUE,
     user_name TEXT NOT NULL,
-    team_id   NOT NULL INT REFERENCES teams(team_id) ON DELETE CASCADE,
+    team_id   INT NOT NULL REFERENCES teams(team_id) ON DELETE CASCADE,
     is_active BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE statuses (
+    status TEXT PRIMARY KEY
 );
 
 CREATE TABLE pull_requests (
@@ -26,10 +30,6 @@ CREATE TABLE pull_request_reviewers (
     pull_request_id INT NOT NULL REFERENCES pull_requests(pull_request_id) ON DELETE CASCADE,
     user_id         INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE(pull_request_id, user_id)
-);
-
-CREATE TABLE statuses (
-    status TEXT PRIMARY KEY
 );
 
 

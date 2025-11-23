@@ -219,7 +219,7 @@ func (db *Database) SetIsActive(ctx context.Context, userID string, isActive boo
 func (db *Database) GetUserBySystemId(ctx context.Context, systemId string) (*models.User, error) {
 	const userQuery = `
         SELECT 
-            user_id
+            user_id,
 			team_id
         FROM users
         WHERE system_id = $1;
@@ -230,12 +230,12 @@ func (db *Database) GetUserBySystemId(ctx context.Context, systemId string) (*mo
 	err := db.conn.QueryRowContext(ctx, userQuery, systemId).Scan(&user.UserId, &user.TeamId)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
+		logs.PrintLog(ctx, "[repository] GetUserBySystemId", err.Error())
 		return nil, nil
 	}
 
 	if err != nil {
-		logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
+		logs.PrintLog(ctx, "[repository] GetUserBySystemId", err.Error())
 		return nil, err
 	}
 	return &user, nil
@@ -256,7 +256,7 @@ func (db *Database) GetListReviewsByUserId(ctx context.Context, userId int) ([]*
 
 	rows, err := db.conn.QueryContext(ctx, prQuery, userId)
 	if err != nil {
-		logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
+		logs.PrintLog(ctx, "[repository] GetListReviewsByUserId", err.Error())
 		return nil, err
 	}
 	defer rows.Close()
@@ -272,7 +272,7 @@ func (db *Database) GetListReviewsByUserId(ctx context.Context, userId int) ([]*
 			&pr.Status,
 		)
 		if err != nil {
-			logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())
+			logs.PrintLog(ctx, "[repository] GetListReviewsByUserId", err.Error())
 			return nil, err
 		}
 
@@ -298,4 +298,95 @@ func (db *Database) PullRequestExists(ctx context.Context, prSystemID string) (b
 	}
 
 	return exists, nil
+}
+
+func (db *Database) GetTeamMembers(ctx context.Context, teamId int) ([]*models.User, error) {
+	const query = `
+        SELECT 
+            user_id,
+            system_id,
+            user_name,
+            is_active
+        FROM users
+        WHERE team_id = $1;
+    `
+
+	rows, err := db.conn.QueryContext(ctx, query, teamId)
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] GetTeamMembers", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	members := make([]*models.User, 0)
+
+	for rows.Next() {
+		m := &models.User{}
+
+		err := rows.Scan(
+			&m.UserId,
+			&m.SystemId,
+			&m.UserName,
+			&m.IsActive,
+		)
+		if err != nil {
+			logs.PrintLog(ctx, "[repository] GetTeamMembers", err.Error())
+			return nil, err
+		}
+
+		members = append(members, m)
+	}
+
+	return members, nil
+}
+
+func (db *Database) CreatePullRequestAndReview(ctx context.Context, pr *models.PullRequest, reviewers []*models.User) error {
+	tx, err := db.conn.BeginTx(ctx, nil)
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] CreatePullRequestAndReview", err.Error())
+		return err
+	}
+
+	const insertPR = `
+        INSERT INTO pull_requests (system_id, pull_request_name, author_id, status)
+        VALUES ($1, $2, $3, $4)
+        RETURNING pull_request_id;
+    `
+
+	err = tx.QueryRowContext(
+		ctx,
+		insertPR,
+		pr.SystemId,
+		pr.PullRequestName,
+		pr.AuthorId,
+		pr.Status,
+	).Scan(&pr.PullRequestId)
+
+	if err != nil {
+		tx.Rollback()
+		logs.PrintLog(ctx, "[repository] CreatePullRequestAndReview", err.Error())
+		return err
+	}
+
+	const insertReviewer = `
+        INSERT INTO pull_request_reviewers (pull_request_id, user_id)
+        VALUES ($1, $2)
+        ON CONFLICT DO NOTHING;
+    `
+
+	for _, r := range reviewers {
+		_, err := tx.ExecContext(ctx, insertReviewer, pr.PullRequestId, r.UserId)
+		if err != nil {
+			tx.Rollback()
+			logs.PrintLog(ctx, "[repository] CreatePullRequestAndReview", err.Error())
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		logs.PrintLog(ctx, "[repository] CreatePullRequestAndReview", err.Error())
+		return err
+	}
+
+	return nil
 }

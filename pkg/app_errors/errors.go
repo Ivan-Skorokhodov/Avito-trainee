@@ -29,7 +29,7 @@ var (
 	}
 	HttpErrNotFound = HttpError{
 		Code:    "NOT_FOUND",
-		Message: "resource team not found",
+		Message: "resource not found",
 		Status:  http.StatusNotFound,
 	}
 	HttpErrPullRequestExists = HttpError{
