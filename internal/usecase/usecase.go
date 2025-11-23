@@ -210,6 +210,7 @@ func (u *UseCase) CreatePullRequest(ctx context.Context, dto *models.CreatePullR
 		SystemId:        dto.PullRequestId,
 		PullRequestName: dto.PullRequestName,
 		AuthorId:        user.UserId,
+		AuthorSystemId:  user.SystemId,
 		Status:          "OPEN",
 	}
 
