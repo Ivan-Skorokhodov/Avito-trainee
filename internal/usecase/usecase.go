@@ -7,6 +7,7 @@ import (
 	"PRmanager/pkg/logs"
 	"context"
 	"fmt"
+	"math/rand/v2"
 )
 
 type UsecaseInterface interface {
@@ -162,5 +163,73 @@ func (u *UseCase) CreatePullRequest(ctx context.Context, dto *models.CreatePullR
 		return nil, appErrors.ErrPullRequestExists
 	}
 
-	return nil, nil
+	user, err := u.repo.GetUserBySystemId(ctx, dto.AuthorId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] GetReview", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	if user == nil {
+		logs.PrintLog(ctx, "[usecase] GetReview", appErrors.ErrResourceNotFound.Error())
+		return nil, appErrors.ErrResourceNotFound
+	}
+
+	members, err := u.repo.GetTeamMembers(ctx, user.TeamId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] GetReview", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	var candidates []*models.User
+
+	for _, member := range members {
+		if member.SystemId == dto.AuthorId {
+			continue
+		}
+		if member.IsActive {
+			candidates = append(candidates, member)
+		}
+	}
+
+	var reviewers []*models.User
+	if len(candidates) == 0 {
+		// no one to review
+	} else if len(candidates) == 1 {
+		reviewers = append(reviewers, candidates[0])
+	} else {
+		rand.Shuffle(len(candidates), func(i, j int) {
+			candidates[i], candidates[j] = candidates[j], candidates[i]
+		})
+
+		reviewers = append(reviewers, candidates[0])
+		reviewers = append(reviewers, candidates[1])
+	}
+	logs.PrintLog(ctx, "[usecase] CreatePullRequest", fmt.Sprintf("Reviewers: %+v", reviewers))
+
+	pr := &models.PullRequest{
+		SystemId:        dto.PullRequestId,
+		PullRequestName: dto.PullRequestName,
+		AuthorId:        user.UserId,
+		Status:          "OPEN",
+	}
+
+	err = u.repo.CreatePullRequestAndReview(ctx, pr, reviewers)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] CreatePullRequest", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	prDto := &models.PullRequestDTO{
+		PullRequestID:     pr.SystemId,
+		PullRequestName:   pr.PullRequestName,
+		AuthorID:          pr.AuthorSystemId,
+		Status:            pr.Status,
+		AssignedReviewers: make([]string, 0, len(reviewers)),
+	}
+
+	for _, reviewer := range reviewers {
+		prDto.AssignedReviewers = append(prDto.AssignedReviewers, reviewer.SystemId)
+	}
+
+	return prDto, nil
 }

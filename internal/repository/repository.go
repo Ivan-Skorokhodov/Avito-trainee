@@ -22,6 +22,8 @@ type RepositoryInterface interface {
 	GetUserBySystemId(ctx context.Context, systemId string) (*models.User, error)
 	GetListReviewsByUserId(ctx context.Context, userId int) ([]*models.PullRequest, error)
 	PullRequestExists(ctx context.Context, prSystemID string) (bool, error)
+	GetTeamMembers(ctx context.Context, teamId int) ([]*models.User, error)
+	CreatePullRequestAndReview(ctx context.Context, pr *models.PullRequest, reviews []*models.User) error
 }
 
 type Database struct {
