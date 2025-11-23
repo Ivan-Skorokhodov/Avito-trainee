@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type Team struct {
 	TeamId      int
@@ -26,5 +29,5 @@ type PullRequest struct {
 	Status            string
 	AssigneeReviewers []*User
 	CreatedAt         time.Time
-	MergedAt          time.Time
+	MergedAt          sql.NullTime
 }

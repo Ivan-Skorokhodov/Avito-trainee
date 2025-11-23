@@ -250,7 +250,7 @@ func (u *UseCase) MergePullRequest(ctx context.Context, dto *models.InputMergePu
 	}
 
 	if pr.Status == "MERGED" {
-		logs.PrintLog(ctx, "[usecase] MergePullRequest", fmt.Sprintf("Pull request is already merged: %+v", dto.PullRequestId))
+		logs.PrintLog(ctx, "[usecase] MergePullRequest", fmt.Sprintf("Pull request is already merged: name %+v id %+v", dto.PullRequestId, pr.PullRequestId))
 		prDto := &models.OutputMergePullRequestDTO{
 			PullRequestID:     pr.SystemId,
 			PullRequestName:   pr.PullRequestName,
@@ -259,11 +259,7 @@ func (u *UseCase) MergePullRequest(ctx context.Context, dto *models.InputMergePu
 			AssignedReviewers: make([]string, 0, len(pr.AssigneeReviewers)),
 		}
 
-		if !pr.MergedAt.IsZero() {
-			prDto.MergedAt = pr.MergedAt.Format(time.RFC3339)
-		} else {
-			prDto.MergedAt = ""
-		}
+		prDto.MergedAt = pr.MergedAt.Time.Format(time.RFC3339)
 
 		for _, r := range pr.AssigneeReviewers {
 			prDto.AssignedReviewers = append(prDto.AssignedReviewers, r.SystemId)
@@ -273,7 +269,9 @@ func (u *UseCase) MergePullRequest(ctx context.Context, dto *models.InputMergePu
 	}
 
 	pr.Status = "MERGED"
-	err = u.repo.SetMergedStatusPullRequest(ctx, pr.PullRequestId)
+	logs.PrintLog(ctx, "[usecase] MergePullRequest", fmt.Sprintf("Pull request is merged first time: name %+v id %+v", dto.PullRequestId, pr.PullRequestId))
+
+	mergedTime, err := u.repo.SetMergedStatusPullRequest(ctx, pr.PullRequestId)
 	if err != nil {
 		logs.PrintLog(ctx, "[usecase] MergePullRequest", err.Error())
 		return nil, appErrors.ErrServerError
@@ -287,11 +285,7 @@ func (u *UseCase) MergePullRequest(ctx context.Context, dto *models.InputMergePu
 		AssignedReviewers: make([]string, 0, len(pr.AssigneeReviewers)),
 	}
 
-	if !pr.MergedAt.IsZero() {
-		prDto.MergedAt = pr.MergedAt.Format(time.RFC3339)
-	} else {
-		prDto.MergedAt = ""
-	}
+	prDto.MergedAt = mergedTime.Time.Format(time.RFC3339)
 
 	for _, r := range pr.AssigneeReviewers {
 		prDto.AssignedReviewers = append(prDto.AssignedReviewers, r.SystemId)

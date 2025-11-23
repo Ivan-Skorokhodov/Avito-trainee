@@ -25,7 +25,7 @@ type RepositoryInterface interface {
 	GetTeamMembers(ctx context.Context, teamId int) ([]*models.User, error)
 	CreatePullRequestAndReview(ctx context.Context, pr *models.PullRequest, reviews []*models.User) error
 	GetPullRequestById(ctx context.Context, prSystemId string) (*models.PullRequest, error)
-	SetMergedStatusPullRequest(ctx context.Context, prId int) error
+	SetMergedStatusPullRequest(ctx context.Context, prId int) (sql.NullTime, error)
 }
 
 type Database struct {
@@ -434,7 +434,7 @@ func (db *Database) GetPullRequestById(ctx context.Context, prSystemId string) (
         SELECT 
             u.user_id,
             u.system_id,
-            u.user_name,
+            u.user_name
         FROM pull_request_reviewers AS r
         JOIN users AS u ON u.user_id = r.user_id
         WHERE r.pull_request_id = $1;
@@ -468,20 +468,23 @@ func (db *Database) GetPullRequestById(ctx context.Context, prSystemId string) (
 	return pr, nil
 }
 
-func (db *Database) SetMergedStatusPullRequest(ctx context.Context, prId int) error {
+func (db *Database) SetMergedStatusPullRequest(ctx context.Context, prId int) (sql.NullTime, error) {
 	const query = `
         UPDATE pull_requests
         SET 
             status = 'MERGED',
             merged_at = NOW()
-        WHERE pull_request_id = $1;
+        WHERE pull_request_id = $1
+        RETURNING merged_at;
     `
 
-	_, err := db.conn.ExecContext(ctx, query, prId)
+	var mergedAt sql.NullTime
+
+	err := db.conn.QueryRowContext(ctx, query, prId).Scan(&mergedAt)
 	if err != nil {
 		logs.PrintLog(ctx, "[repository] SetMergedStatusPullRequest", err.Error())
-		return err
+		return sql.NullTime{}, err
 	}
 
-	return nil
+	return mergedAt, nil
 }
