@@ -16,7 +16,7 @@ CREATE TABLE pull_requests (
     system_id         TEXT NOT NULL UNIQUE,
     pull_request_name TEXT NOT NULL,
     author_id         INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    status            TEXT NOT NULL,
+    status TEXT NOT NULL REFERENCES statuses(status) ON DELETE RESTRICT,
     created_at        TIMESTAMP NOT NULL DEFAULT NOW(),
     merged_at         TIMESTAMP
 );
@@ -27,4 +27,9 @@ CREATE TABLE pull_request_reviewers (
     user_id         INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE(pull_request_id, user_id)
 );
+
+CREATE TABLE statuses (
+    status TEXT PRIMARY KEY
+);
+
 
