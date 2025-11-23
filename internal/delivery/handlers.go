@@ -124,3 +124,30 @@ func (h *Handler) GetReview(w http.ResponseWriter, r *http.Request) {
 	response.SendOkResonseReview(review, w)
 	logs.PrintLog(r.Context(), "[delivery] GetReview", fmt.Sprintf("Review found for user: %+v", userSystemId))
 }
+
+func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
+	var InputData models.CreatePullRequestDTO
+	err := json.NewDecoder(r.Body).Decode(&InputData)
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] CreatePullRequest", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrParseData, w)
+		return
+	}
+
+	pr, err := h.usecase.CreatePullRequest(r.Context(), &InputData)
+	if errors.Is(err, appErrors.ErrResourceNotFound) {
+		logs.PrintLog(r.Context(), "[delivery] CreatePullRequest", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
+		return
+	}
+
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] CreatePullRequest", err.Error())
+		response.SendErrorResponse(appErrors.HttpServerError, w)
+		return
+	}
+
+	response.SendOkResonsePullRequest(pr, w)
+	logs.PrintLog(r.Context(), "[delivery] CreatePullRequest", fmt.Sprintf("PullRequest created: %+v", InputData.PullRequestName))
+
+}

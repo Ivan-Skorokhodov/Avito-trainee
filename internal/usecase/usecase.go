@@ -14,6 +14,7 @@ type UsecaseInterface interface {
 	GetTeamByName(ctx context.Context, teamName string) (*models.TeamDTO, error)
 	SetIsActive(ctx context.Context, dto *models.SetIsActiveDTO) (*models.UserDTO, error)
 	GetReview(ctx context.Context, userSystemId string) (*models.ReviewDTO, error)
+	CreatePullRequest(ctx context.Context, dto *models.CreatePullRequestDTO) (*models.PullRequestDTO, error)
 }
 
 type UseCase struct {
@@ -133,11 +134,11 @@ func (u *UseCase) GetReview(ctx context.Context, userSystemId string) (*models.R
 
 	reviewDto := &models.ReviewDTO{
 		UserId:      user.SystemId,
-		PullRequest: make([]models.PullRequestDTO, 0, len(reviews)),
+		PullRequest: make([]models.PullRequestShortDTO, 0, len(reviews)),
 	}
 
 	for _, pr := range reviews {
-		reviewDto.PullRequest = append(reviewDto.PullRequest, models.PullRequestDTO{
+		reviewDto.PullRequest = append(reviewDto.PullRequest, models.PullRequestShortDTO{
 			PullRequestId:   pr.SystemId,
 			PullRequestName: pr.PullRequestName,
 			AuthorId:        pr.AuthorSystemId,

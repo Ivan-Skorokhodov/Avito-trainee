@@ -217,13 +217,14 @@ func (db *Database) GetUserBySystemId(ctx context.Context, systemId string) (*mo
 	const userQuery = `
         SELECT 
             user_id
+			team_id
         FROM users
         WHERE system_id = $1;
     `
 
 	var user models.User
 	user.SystemId = systemId
-	err := db.conn.QueryRowContext(ctx, userQuery, systemId).Scan(&user.UserId)
+	err := db.conn.QueryRowContext(ctx, userQuery, systemId).Scan(&user.UserId, &user.TeamId)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		logs.PrintLog(ctx, "[repository] GetUserWithPRsBySystemId", err.Error())

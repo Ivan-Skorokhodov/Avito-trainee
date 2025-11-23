@@ -24,13 +24,27 @@ type UserDTO struct {
 }
 
 type ReviewDTO struct {
-	UserId      string           `json:"user_id"`
-	PullRequest []PullRequestDTO `json:"pull_requests"`
+	UserId      string                `json:"user_id"`
+	PullRequest []PullRequestShortDTO `json:"pull_requests"`
 }
 
-type PullRequestDTO struct {
+type PullRequestShortDTO struct {
 	PullRequestId   string `json:"pull_request_id"`
 	PullRequestName string `json:"pull_request_name"`
 	AuthorId        string `json:"author_id"`
 	Status          string `json:"status"`
+}
+
+type CreatePullRequestDTO struct {
+	PullRequestId   string `json:"pull_request_id"`
+	PullRequestName string `json:"pull_request_name"`
+	AuthorId        string `json:"author_id"`
+}
+
+type PullRequestDTO struct {
+	PullRequestID     string   `json:"pull_request_id"`
+	PullRequestName   string   `json:"pull_request_name"`
+	AuthorID          string   `json:"author_id"`
+	Status            string   `json:"status"`
+	AssignedReviewers []string `json:"assigned_reviewers"`
 }

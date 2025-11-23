@@ -7,7 +7,7 @@ CREATE TABLE users (
     user_id   SERIAL PRIMARY KEY,
     system_id TEXT NOT NULL UNIQUE,
     user_name TEXT NOT NULL,
-    team_id   INT REFERENCES teams(team_id) ON DELETE SET NULL,
+    team_id   NOT NULL INT REFERENCES teams(team_id) ON DELETE CASCADE,
     is_active BOOLEAN NOT NULL DEFAULT FALSE
 );
 

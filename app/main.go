@@ -25,6 +25,8 @@ func main() {
 	r.Post("/users/setIsActive", handler.SetIsActive)
 	r.Get("/users/getReview", handler.GetReview)
 
+	r.Post("/pullRequest/create", handler.CreatePullRequest)
+
 	log.Println("Servise started on :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
