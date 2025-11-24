@@ -294,3 +294,93 @@ func (u *UseCase) MergePullRequest(ctx context.Context, dto *models.InputMergePu
 
 	return prDto, nil
 }
+
+func (u *UseCase) Reassign(ctx context.Context, dto *models.InputReassignDTO) (*models.OutputReassignDTO, error) {
+	pr, err := u.repo.GetPullRequestById(ctx, dto.PullRequestId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] MergePullRequest", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	if pr == nil {
+		logs.PrintLog(ctx, "[usecase] MergePullRequest", appErrors.ErrResourceNotFound.Error())
+		return nil, appErrors.ErrResourceNotFound
+	}
+
+	user, err := u.repo.GetUserBySystemId(ctx, dto.UserId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] GetReview", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	if user == nil {
+		logs.PrintLog(ctx, "[usecase] GetReview", appErrors.ErrResourceNotFound.Error())
+		return nil, appErrors.ErrResourceNotFound
+	}
+
+	if pr.Status == "MERGED" {
+		logs.PrintLog(ctx, "[usecase] Reassign", fmt.Sprintf("Pull request is already merged: name %+v id %+v", dto.PullRequestId, pr.PullRequestId))
+		return nil, appErrors.ErrPullRequestMerged
+	}
+
+	IsUserReviewThisPR := false
+	var otherReviewer *models.User
+	for _, r := range pr.AssigneeReviewers {
+		if r.SystemId == dto.UserId {
+			IsUserReviewThisPR = true
+			continue
+		}
+		otherReviewer = r
+	}
+
+	if !IsUserReviewThisPR {
+		// return pr without replace
+		prDto := &models.OutputReassignDTO{
+			PullRequestID:     pr.SystemId,
+			PullRequestName:   pr.PullRequestName,
+			AuthorID:          pr.AuthorSystemId,
+			Status:            pr.Status,
+			AssignedReviewers: make([]string, 0, len(pr.AssigneeReviewers)),
+			ReplacedBy:        "-",
+		}
+
+		for _, r := range pr.AssigneeReviewers {
+			prDto.AssignedReviewers = append(prDto.AssignedReviewers, r.SystemId)
+		}
+
+		logs.PrintLog(ctx, "[usecase] Reassign", fmt.Sprintf("User is not assigned to pull request: name %+v id %+v", dto.PullRequestId, pr.PullRequestId))
+		return prDto, nil
+	}
+
+	members, err := u.repo.GetTeamMembers(ctx, user.TeamId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] GetReview", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	var candidates []*models.User
+	for _, member := range members {
+		if member.SystemId == pr.AuthorSystemId || member.SystemId == dto.UserId || member.SystemId == otherReviewer.SystemId {
+			continue
+		}
+		if member.IsActive {
+			candidates = append(candidates, member)
+		}
+	}
+
+	if len(candidates) == 0 {
+		// just delete user from reviewers
+	} else {
+		rand.Shuffle(len(candidates), func(i, j int) {
+			candidates[i], candidates[j] = candidates[j], candidates[i]
+		})
+	}
+
+	err = u.repo.ReplaceReviewers(ctx, pr.PullRequestId, user.UserId, candidates[0].UserId)
+	if err != nil {
+		logs.PrintLog(ctx, "[usecase] Reassign", err.Error())
+		return nil, appErrors.ErrServerError
+	}
+
+	return nil, nil
+}

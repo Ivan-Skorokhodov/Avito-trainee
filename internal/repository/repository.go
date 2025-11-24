@@ -26,6 +26,7 @@ type RepositoryInterface interface {
 	CreatePullRequestAndReview(ctx context.Context, pr *models.PullRequest, reviews []*models.User) error
 	GetPullRequestById(ctx context.Context, prSystemId string) (*models.PullRequest, error)
 	SetMergedStatusPullRequest(ctx context.Context, prId int) (sql.NullTime, error)
+	ReplaceReviewers(ctx context.Context, prId int, oldReviewerId int, newReviewerId int) error
 }
 
 type Database struct {
