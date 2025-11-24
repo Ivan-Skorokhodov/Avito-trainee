@@ -489,3 +489,58 @@ func (db *Database) SetMergedStatusPullRequest(ctx context.Context, prId int) (s
 
 	return mergedAt, nil
 }
+
+func (db *Database) ReplaceReviewers(ctx context.Context, prId int, oldReviewerId int, newReviewerId int) error {
+	tx, err := db.conn.BeginTx(ctx, nil)
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
+		return err
+	}
+
+	const deleteQuery = `
+        DELETE FROM pull_request_reviewers
+        WHERE pull_request_id = $1 AND user_id = $2;
+    `
+
+	result, err := tx.ExecContext(ctx, deleteQuery, prId, oldReviewerId)
+	if err != nil {
+		tx.Rollback()
+		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
+		return err
+	}
+
+	_, err = result.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
+		return err
+	}
+
+	const insertQuery = `
+        INSERT INTO pull_request_reviewers (pull_request_id, user_id)
+        VALUES ($1, $2)
+        ON CONFLICT DO NOTHING;
+    `
+
+	result, err = tx.ExecContext(ctx, insertQuery, prId, newReviewerId)
+	if err != nil {
+		tx.Rollback()
+		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
+		return err
+	}
+
+	_, err = result.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
+		return err
+	}
+
+	logs.PrintLog(ctx, "[repository] ReplaceReviewers", fmt.Sprint("success replace: %+v -> %+v", oldReviewerId, newReviewerId))
+	return nil
+}
