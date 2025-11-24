@@ -22,6 +22,10 @@ type MergedPullRequestResponse struct {
 	PullRequest models.OutputMergePullRequestDTO `json:"pr"`
 }
 
+type ReassignResponse struct {
+	PullRequest models.OutputReassignDTO `json:"pr"`
+}
+
 func SendOkResonseTeamCreated(team *models.TeamDTO, w http.ResponseWriter) {
 	response := TeamCreatedResponse{Team: *team}
 	w.Header().Set("Content-Type", "application/json")
@@ -57,6 +61,13 @@ func SendOkResonseCreatePullRequest(pr *models.OutputCreatePullRequestDTO, w htt
 
 func SendOkResonseMergePullRequest(pr *models.OutputMergePullRequestDTO, w http.ResponseWriter) {
 	response := MergedPullRequestResponse{PullRequest: *pr}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+func SendOkResonseReassign(pr *models.OutputReassignDTO, w http.ResponseWriter) {
+	response := ReassignResponse{PullRequest: *pr}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)

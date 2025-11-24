@@ -182,3 +182,35 @@ func (h *Handler) MergePullRequest(w http.ResponseWriter, r *http.Request) {
 	response.SendOkResonseMergePullRequest(pr, w)
 	logs.PrintLog(r.Context(), "[delivery] MergePullRequest", fmt.Sprintf("PullRequest merged: %+v", InputData.PullRequestId))
 }
+
+func (h *Handler) Reassign(w http.ResponseWriter, r *http.Request) {
+	var InputData models.InputReassignDTO
+	err := json.NewDecoder(r.Body).Decode(&InputData)
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] Reassign", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrParseData, w)
+		return
+	}
+
+	pr, err := h.usecase.Reassign(r.Context(), &InputData)
+	if errors.Is(err, appErrors.ErrResourceNotFound) {
+		logs.PrintLog(r.Context(), "[delivery] Reassign", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrNotFound, w)
+		return
+	}
+
+	if errors.Is(err, appErrors.ErrPullRequestMerged) {
+		logs.PrintLog(r.Context(), "[delivery] Reassign", err.Error())
+		response.SendErrorResponse(appErrors.HttpErrPullRequestMerged, w)
+		return
+	}
+
+	if err != nil {
+		logs.PrintLog(r.Context(), "[delivery] Reassign", err.Error())
+		response.SendErrorResponse(appErrors.HttpServerError, w)
+		return
+	}
+
+	response.SendOkResonseReassign(pr, w)
+	logs.PrintLog(r.Context(), "[delivery] Reassign", fmt.Sprintf("PullRequest reasigned: %+v", InputData.PullRequestId))
+}

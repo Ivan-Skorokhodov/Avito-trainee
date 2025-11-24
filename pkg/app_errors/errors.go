@@ -37,6 +37,11 @@ var (
 		Message: "PR id already exists",
 		Status:  http.StatusConflict,
 	}
+	HttpErrPullRequestMerged = HttpError{
+		Code:    "PR_MERGED",
+		Message: "cannot reassign on merged PR",
+		Status:  http.StatusConflict,
+	}
 )
 
 var (
@@ -45,4 +50,5 @@ var (
 	ErrParseData         = errors.New("can't parse data from json")
 	ErrResourceNotFound  = errors.New("resource not found")
 	ErrPullRequestExists = errors.New("pr id already exists")
+	ErrPullRequestMerged = errors.New("cannot reassign on merged PR")
 )

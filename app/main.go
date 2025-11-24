@@ -27,6 +27,7 @@ func main() {
 
 	r.Post("/pullRequest/create", handler.CreatePullRequest)
 	r.Post("/pullRequest/merge", handler.MergePullRequest)
+	r.Post("/pullRequest/reassign", handler.Reassign)
 
 	log.Println("Servise started on :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
