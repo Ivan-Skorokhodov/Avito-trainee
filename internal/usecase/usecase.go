@@ -360,7 +360,11 @@ func (u *UseCase) Reassign(ctx context.Context, dto *models.InputReassignDTO) (*
 
 	var candidates []*models.User
 	for _, member := range members {
-		if member.SystemId == pr.AuthorSystemId || member.SystemId == dto.UserId || member.SystemId == otherReviewer.SystemId {
+		if member.SystemId == pr.AuthorSystemId || member.SystemId == dto.UserId {
+			continue
+		}
+
+		if otherReviewer != nil && member.SystemId == otherReviewer.SystemId {
 			continue
 		}
 		if member.IsActive {
@@ -369,7 +373,27 @@ func (u *UseCase) Reassign(ctx context.Context, dto *models.InputReassignDTO) (*
 	}
 
 	if len(candidates) == 0 {
-		// just delete user from reviewers
+		err = u.repo.DeleteReview(ctx, pr.PullRequestId, user.UserId)
+		if err != nil {
+			logs.PrintLog(ctx, "[usecase] Reassign", err.Error())
+			return nil, appErrors.ErrServerError
+		}
+
+		prDto := &models.OutputReassignDTO{
+			PullRequestID:     pr.SystemId,
+			PullRequestName:   pr.PullRequestName,
+			AuthorID:          pr.AuthorSystemId,
+			Status:            pr.Status,
+			AssignedReviewers: make([]string, 0, len(pr.AssigneeReviewers)),
+			ReplacedBy:        "-",
+		}
+
+		if otherReviewer != nil {
+			prDto.AssignedReviewers = append(prDto.AssignedReviewers, otherReviewer.SystemId)
+		}
+
+		return prDto, nil
+
 	} else {
 		rand.Shuffle(len(candidates), func(i, j int) {
 			candidates[i], candidates[j] = candidates[j], candidates[i]
@@ -382,5 +406,21 @@ func (u *UseCase) Reassign(ctx context.Context, dto *models.InputReassignDTO) (*
 		return nil, appErrors.ErrServerError
 	}
 
-	return nil, nil
+	prDto := &models.OutputReassignDTO{
+		PullRequestID:     pr.SystemId,
+		PullRequestName:   pr.PullRequestName,
+		AuthorID:          pr.AuthorSystemId,
+		Status:            pr.Status,
+		AssignedReviewers: make([]string, 0, len(pr.AssigneeReviewers)),
+		ReplacedBy:        candidates[0].SystemId,
+	}
+
+	prDto.AssignedReviewers = append(prDto.AssignedReviewers, candidates[0].SystemId)
+
+	if otherReviewer != nil {
+		prDto.AssignedReviewers = append(prDto.AssignedReviewers, otherReviewer.SystemId)
+	}
+
+	logs.PrintLog(ctx, "[usecase] Reassign", fmt.Sprintf("Reassigned pull request: name %+v id %+v", dto.PullRequestId, pr.PullRequestId))
+	return prDto, nil
 }

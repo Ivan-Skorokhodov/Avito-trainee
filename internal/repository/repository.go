@@ -27,6 +27,7 @@ type RepositoryInterface interface {
 	GetPullRequestById(ctx context.Context, prSystemId string) (*models.PullRequest, error)
 	SetMergedStatusPullRequest(ctx context.Context, prId int) (sql.NullTime, error)
 	ReplaceReviewers(ctx context.Context, prId int, oldReviewerId int, newReviewerId int) error
+	DeleteReview(ctx context.Context, prId int, userId int) error
 }
 
 type Database struct {
@@ -541,6 +542,27 @@ func (db *Database) ReplaceReviewers(ctx context.Context, prId int, oldReviewerI
 		return err
 	}
 
-	logs.PrintLog(ctx, "[repository] ReplaceReviewers", fmt.Sprint("success replace: %+v -> %+v", oldReviewerId, newReviewerId))
+	logs.PrintLog(ctx, "[repository] ReplaceReviewers", fmt.Sprintf("success replace: %+v -> %+v", oldReviewerId, newReviewerId))
+	return nil
+}
+
+func (db *Database) DeleteReview(ctx context.Context, prId int, userId int) error {
+	const query = `
+        DELETE FROM pull_request_reviewers
+        WHERE pull_request_id = $1 AND user_id = $2;
+    `
+
+	result, err := db.conn.ExecContext(ctx, query, prId, userId)
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] DeleteReview", err.Error())
+		return fmt.Errorf("delete reviewer: %w", err)
+	}
+
+	_, err = result.RowsAffected()
+	if err != nil {
+		logs.PrintLog(ctx, "[repository] DeleteReview", err.Error())
+		return err
+	}
+
 	return nil
 }
