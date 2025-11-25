@@ -1,4 +1,4 @@
-version: 2
+version: "2"
 
 run:
   timeout: 3m
@@ -14,5 +14,3 @@ linters:
 linters-settings:
   govet:
     enable-all: true
-    disable:
-      - shadow
