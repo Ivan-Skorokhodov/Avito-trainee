@@ -1,8 +1,7 @@
-version: 1
+version: 2
 
 run:
   timeout: 3m
-  modules-download-mode: readonly 
 
 linters:
   enable:
@@ -11,7 +10,3 @@ linters:
     - staticcheck
     - ineffassign
     - gocritic
-
-linters-settings:
-  govet:
-    enable-all: true
