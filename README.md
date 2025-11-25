@@ -8,4 +8,5 @@
 - "Вынес" .env в docker compose и собираю их в кофиг на старте app;
 - Накатываю на Postgres миграции при запуске;
 - Добавил линтер (golangci-lint);
-- Вынес ошибки и json decode/encode в отдельные пакеты.
+- Вынес ошибки и json decode/encode в отдельные пакеты;
+- Сгенерировал mock и написал unit-тесты для usecase.
