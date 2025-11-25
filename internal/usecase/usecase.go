@@ -195,18 +195,19 @@ func (u *UseCase) CreatePullRequest(ctx context.Context, dto *models.InputCreate
 	}
 
 	var reviewers []*models.User
-	if len(candidates) == 0 {
+	switch len(candidates) {
+	case 0:
 		// no one to review
-	} else if len(candidates) == 1 {
+	case 1:
 		reviewers = append(reviewers, candidates[0])
-	} else {
+	default:
 		rand.Shuffle(len(candidates), func(i, j int) {
 			candidates[i], candidates[j] = candidates[j], candidates[i]
 		})
 
-		reviewers = append(reviewers, candidates[0])
-		reviewers = append(reviewers, candidates[1])
+		reviewers = append(reviewers, candidates[0], candidates[1])
 	}
+
 	logs.PrintLog(ctx, "[usecase] CreatePullRequest", fmt.Sprintf("Reviewers: %+v", reviewers))
 
 	pr := &models.PullRequest{
