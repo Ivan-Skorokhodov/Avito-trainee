@@ -5,6 +5,7 @@ import (
 	"PRmanager/internal/repository"
 	"PRmanager/internal/usecase"
 	"PRmanager/pkg/logs"
+	"PRmanager/pkg/panic"
 	"log"
 	"net/http"
 
@@ -17,6 +18,7 @@ func main() {
 	handler := delivery.NewHandler(usecase)
 
 	r := chi.NewRouter()
+	r.Use(panic.PanicMiddleware)
 	r.Use(logs.LoggerMiddleware)
 
 	r.Post("/team/add", handler.AddTeam)
