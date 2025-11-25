@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"PRmanager/config"
 	"PRmanager/internal/models"
 	appErrors "PRmanager/pkg/app_errors"
 	"PRmanager/pkg/logs"
@@ -9,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 
 	_ "github.com/lib/pq"
 )
@@ -34,14 +34,14 @@ type Database struct {
 	conn *sql.DB
 }
 
-func NewDatabase() *Database {
+func NewDatabase(cfg *config.Config) *Database {
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
+		cfg.Database.Host,
+		cfg.Database.Port,
+		cfg.Database.User,
+		cfg.Database.Password,
+		cfg.Database.Name,
 	)
 
 	conn, err := sql.Open("postgres", dsn)

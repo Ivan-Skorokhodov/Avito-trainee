@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"PRmanager/config"
 	"PRmanager/internal/delivery/response"
 	"PRmanager/internal/models"
 	"PRmanager/internal/usecase"
@@ -15,11 +16,13 @@ import (
 
 type Handler struct {
 	usecase usecase.UsecaseInterface
+	AppPort string
 }
 
-func NewHandler(usecase usecase.UsecaseInterface) *Handler {
+func NewHandler(usecase usecase.UsecaseInterface, config *config.Config) *Handler {
 	return &Handler{
 		usecase: usecase,
+		AppPort: config.Server.Port,
 	}
 }
 

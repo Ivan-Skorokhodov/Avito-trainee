@@ -1,6 +1,7 @@
 package main
 
 import (
+	"PRmanager/config"
 	"PRmanager/internal/delivery"
 	"PRmanager/internal/repository"
 	"PRmanager/internal/usecase"
@@ -13,9 +14,10 @@ import (
 )
 
 func main() {
-	repo := repository.NewDatabase()
-	usecase := usecase.NewUseCase(repo)
-	handler := delivery.NewHandler(usecase)
+	cfg := config.LoadConfig()
+	repo := repository.NewDatabase(cfg)
+	uc := usecase.NewUseCase(repo)
+	handler := delivery.NewHandler(uc, cfg)
 
 	r := chi.NewRouter()
 	r.Use(panic.PanicMiddleware)
@@ -32,5 +34,5 @@ func main() {
 	r.Post("/pullRequest/reassign", handler.Reassign)
 
 	log.Println("Servise started on :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(handler.AppPort, r))
 }
