@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 type Config struct {
 	Database struct {
@@ -35,7 +38,7 @@ func LoadConfig() *Config {
 		Server: struct {
 			Port string
 		}{
-			Port: os.Getenv("APP_PORT"),
+			Port: fmt.Sprintf(":%s", os.Getenv("APP_PORT")),
 		},
 	}
 }

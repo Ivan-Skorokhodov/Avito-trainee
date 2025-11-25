@@ -33,6 +33,6 @@ func main() {
 	r.Post("/pullRequest/merge", handler.MergePullRequest)
 	r.Post("/pullRequest/reassign", handler.Reassign)
 
-	log.Println("Servise started on :8080")
+	log.Println("Servise started on port", handler.AppPort)
 	log.Fatal(http.ListenAndServe(handler.AppPort, r))
 }
