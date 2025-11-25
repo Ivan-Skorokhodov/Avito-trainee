@@ -82,7 +82,7 @@ func (db *Database) CreateTeam(ctx context.Context, team *models.Team) error {
         RETURNING team_id;
     `
 	if err := tx.QueryRowContext(ctx, insertTeam, team.TeamName).Scan(&team.TeamId); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		logs.PrintLog(ctx, "[repository] CreateTeam", err.Error())
 		return err
 	}
@@ -105,7 +105,7 @@ func (db *Database) CreateTeam(ctx context.Context, team *models.Team) error {
 		).Scan(&newUserID)
 
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			logs.PrintLog(ctx, "[repository] CreateTeam", err.Error())
 			return err
 		}
@@ -152,7 +152,9 @@ func (db *Database) GetTeamByName(ctx context.Context, teamName string) (*models
 		logs.PrintLog(ctx, "[repository] GetTeamByName", err.Error())
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	team.TeamMembers = make([]*models.User, 0)
 	for rows.Next() {
@@ -263,7 +265,9 @@ func (db *Database) GetListReviewsByUserId(ctx context.Context, userId int) ([]*
 		logs.PrintLog(ctx, "[repository] GetListReviewsByUserId", err.Error())
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	reviews := make([]*models.PullRequest, 0)
 	for rows.Next() {
@@ -320,7 +324,9 @@ func (db *Database) GetTeamMembers(ctx context.Context, teamId int) ([]*models.U
 		logs.PrintLog(ctx, "[repository] GetTeamMembers", err.Error())
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	members := make([]*models.User, 0)
 
@@ -367,7 +373,7 @@ func (db *Database) CreatePullRequestAndReview(ctx context.Context, pr *models.P
 	).Scan(&pr.PullRequestId)
 
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		logs.PrintLog(ctx, "[repository] CreatePullRequestAndReview", err.Error())
 		return err
 	}
@@ -381,7 +387,7 @@ func (db *Database) CreatePullRequestAndReview(ctx context.Context, pr *models.P
 	for _, r := range reviewers {
 		_, err := tx.ExecContext(ctx, insertReviewer, pr.PullRequestId, r.UserId)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			logs.PrintLog(ctx, "[repository] CreatePullRequestAndReview", err.Error())
 			return err
 		}
@@ -447,7 +453,9 @@ func (db *Database) GetPullRequestById(ctx context.Context, prSystemId string) (
 		logs.PrintLog(ctx, "[repository] GetPullRequestById", err.Error())
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	pr.AssigneeReviewers = make([]*models.User, 0)
 
@@ -505,14 +513,14 @@ func (db *Database) ReplaceReviewers(ctx context.Context, prId int, oldReviewerI
 
 	result, err := tx.ExecContext(ctx, deleteQuery, prId, oldReviewerId)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
 		return err
 	}
 
 	_, err = result.RowsAffected()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
 		return err
 	}
@@ -525,14 +533,14 @@ func (db *Database) ReplaceReviewers(ctx context.Context, prId int, oldReviewerI
 
 	result, err = tx.ExecContext(ctx, insertQuery, prId, newReviewerId)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
 		return err
 	}
 
 	_, err = result.RowsAffected()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		logs.PrintLog(ctx, "[repository] ReplaceReviewers", err.Error())
 		return err
 	}
