@@ -10,3 +10,10 @@ linters:
     - staticcheck
     - ineffassign
     - gocritic
+
+  settings:
+    govet:
+      disable:
+        - fieldalignment
+        - shadow
+      
